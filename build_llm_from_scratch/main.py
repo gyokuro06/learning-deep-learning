@@ -1,37 +1,19 @@
-import urllib.request
 import re
+import urllib.request
 from typing import List
 
+from tokenizer import SimpleTokenizerV2
 
-class SimpleTokenizerV1:
-    def __init__(self, vocabularies: dict[str, int]):
-        self.str_to_int = vocabularies
-        self.int_to_str = {i: s for s, i in vocabularies.items()}
 
-    def __preprocess(self, text: str) -> List[str]:
-        regex = r'([,.:;?_!"()\']|--|\s)'
-        items = re.split(regex, text)
-        result = [item.strip() for item in items if item.strip()]
-        return result
-
-    def encode(self, text: str) -> List[int]:
-        preprocessed = self.__preprocess(text)
-        ids = [self.str_to_int[s] for s in preprocessed]
-        return ids
-        # all_words = sorted(set(tokens))
-        # vocabularies = {token: integer for integer, token in enumerate(all_words)}
-        # result = []
-        # for i, item in enumerate(vocabularies.items()):
-        #     print(item)
-        #     result.append(i)
-        #     if i >= 50:
-        #         break
-        # return result
-
-    def decode(self, ids: List[int]) -> str:
-        text = " ".join([self.int_to_str[id]] for id in ids)
-        text = re.sub(r'\s+([,.?!"()\')', r"\1", text)
-        return text
+def vocabularies(text: str) -> dict[str, int]:
+    regex = r'([,.:;?_!"()\']|--|\s)'
+    items = re.split(regex, text)
+    tokens = [item.strip() for item in items if item.strip()]
+    all_words = sorted(set(tokens))
+    all_words.extend(["<|endoftext|>", "<|unk|>"])
+    vocabularies = {token: i for i, token in enumerate(all_words)}
+    print("Total number of vocabularies:", len(vocabularies))
+    return vocabularies
 
 
 def the_verdict() -> List[str]:
@@ -47,12 +29,19 @@ def the_verdict() -> List[str]:
         raw_text = f.read()
 
     print("Total number of character:", len(raw_text))
-    print(raw_text[:99])
 
     return raw_text
 
 
 if __name__ == "__main__":
-    # text = "Hello, world. This, is a test."
-    text = the_verdict()
-    preprocess(text)
+    tokenizer = SimpleTokenizerV2(vocabularies(the_verdict()))
+
+    # text = "I can hear Mrs. Gideon Thwing--his last Chicago sitter--deploring his unaccountable abdication."
+    text1 = "Hello, do you like tea?"
+    text2 = "In the sunlit terraces of the palace."
+    text = " <|endoftext|> ".join((text1, text2))
+    print("\nInput text:", text)
+
+    ids = tokenizer.encode(text)
+    print("\nEncoded:", ids)
+    print("Decoded:", tokenizer.decode(ids))
