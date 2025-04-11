@@ -1,6 +1,9 @@
+from importlib.metadata import version
 import re
 import urllib.request
 from typing import List
+
+import tiktoken
 
 from tokenizer import SimpleTokenizerV2
 
@@ -34,14 +37,27 @@ def the_verdict() -> List[str]:
 
 
 if __name__ == "__main__":
-    tokenizer = SimpleTokenizerV2(vocabularies(the_verdict()))
+    print("tiktoken version:", version("tiktoken"))
+    # tokenizer = SimpleTokenizerV2(vocabularies(the_verdict()))
+    tokenizer = tiktoken.get_encoding("gpt2")
 
+    enc_text = tokenizer.encode(the_verdict())
+    print("Total number of encoded tokens:", len(enc_text))
+    enc_sample = enc_text[50:]
+    context_size = 4
+    for i in range(1, context_size + 1):
+        context = enc_sample[:i]
+        desired = enc_sample[i]
+        print(tokenizer.decode(context), "----->", tokenizer.decode([desired]))
     # text = "I can hear Mrs. Gideon Thwing--his last Chicago sitter--deploring his unaccountable abdication."
-    text1 = "Hello, do you like tea?"
-    text2 = "In the sunlit terraces of the palace."
-    text = " <|endoftext|> ".join((text1, text2))
+
+    # text1 = "Hello, do you like tea?"
+    # text2 = "In the sunlit terraces of the someUnknownPlace."
+    # text = " <|endoftext|> ".join((text1, text2))
+
+    text = "Akwirw ier"
     print("\nInput text:", text)
 
-    ids = tokenizer.encode(text)
+    ids = tokenizer.encode(text, allowed_special={"<|endoftext|>"})
     print("\nEncoded:", ids)
     print("Decoded:", tokenizer.decode(ids))
