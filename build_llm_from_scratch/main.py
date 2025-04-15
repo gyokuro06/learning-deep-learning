@@ -1,11 +1,13 @@
 from importlib.metadata import version
+import os
 import re
 import urllib.request
 from typing import List
 
 import tiktoken
+import torch
 
-from tokenizer import SimpleTokenizerV2
+from dataset import create_v1_dataloader
 
 
 def vocabularies(text: str) -> dict[str, int]:
@@ -26,7 +28,8 @@ def the_verdict() -> List[str]:
         "the-verdict.txt"
     )
     file_path = "the-verdict.txt"
-    urllib.request.urlretrieve(url, file_path)
+    if not os.path.exists(file_path):
+        urllib.request.urlretrieve(url, file_path)
 
     with open(file_path, "r", encoding="utf-8") as f:
         raw_text = f.read()
@@ -38,7 +41,7 @@ def the_verdict() -> List[str]:
 
 if __name__ == "__main__":
     print("tiktoken version:", version("tiktoken"))
-    # tokenizer = SimpleTokenizerV2(vocabularies(the_verdict()))
+    print("torch version", version("torch"))
     tokenizer = tiktoken.get_encoding("gpt2")
 
     enc_text = tokenizer.encode(the_verdict())
@@ -49,11 +52,6 @@ if __name__ == "__main__":
         context = enc_sample[:i]
         desired = enc_sample[i]
         print(tokenizer.decode(context), "----->", tokenizer.decode([desired]))
-    # text = "I can hear Mrs. Gideon Thwing--his last Chicago sitter--deploring his unaccountable abdication."
-
-    # text1 = "Hello, do you like tea?"
-    # text2 = "In the sunlit terraces of the someUnknownPlace."
-    # text = " <|endoftext|> ".join((text1, text2))
 
     text = "Akwirw ier"
     print("\nInput text:", text)
@@ -61,3 +59,18 @@ if __name__ == "__main__":
     ids = tokenizer.encode(text, allowed_special={"<|endoftext|>"})
     print("\nEncoded:", ids)
     print("Decoded:", tokenizer.decode(ids))
+
+    dataloader = create_v1_dataloader(
+        txt=the_verdict(), batch_size=8, max_length=4, stride=4, shuffle=False
+    )
+    data_iter = iter(dataloader)
+    inputs, targets = next(data_iter)
+    print("\nInputs:\n", inputs)
+    print("Targets:\n", targets)
+
+    test_input_ids = torch.tensor([2, 3, 5, 1])
+    vocab_size = 6
+    output_dim = 3
+    torch.manual_seed(123)
+    embedding_layer = torch.nn.Embedding(vocab_size, output_dim)
+    print(embedding_layer.weight)
