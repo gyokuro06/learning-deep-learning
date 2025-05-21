@@ -1,7 +1,7 @@
-from importlib.metadata import version
 import os
 import re
 import urllib.request
+from importlib.metadata import version
 from typing import List
 
 import tiktoken
@@ -42,35 +42,31 @@ def the_verdict() -> List[str]:
 if __name__ == "__main__":
     print("tiktoken version:", version("tiktoken"))
     print("torch version", version("torch"))
-    tokenizer = tiktoken.get_encoding("gpt2")
 
-    enc_text = tokenizer.encode(the_verdict())
-    print("Total number of encoded tokens:", len(enc_text))
-    enc_sample = enc_text[50:]
-    context_size = 4
-    for i in range(1, context_size + 1):
-        context = enc_sample[:i]
-        desired = enc_sample[i]
-        print(tokenizer.decode(context), "----->", tokenizer.decode([desired]))
+    vocab_size = 50257
+    output_dim = 256
+    token_embedding_layer = torch.nn.Embedding(vocab_size, output_dim)
 
-    text = "Akwirw ier"
-    print("\nInput text:", text)
-
-    ids = tokenizer.encode(text, allowed_special={"<|endoftext|>"})
-    print("\nEncoded:", ids)
-    print("Decoded:", tokenizer.decode(ids))
-
+    max_length = 4
     dataloader = create_v1_dataloader(
-        txt=the_verdict(), batch_size=8, max_length=4, stride=4, shuffle=False
+        txt=the_verdict(),
+        batch_size=8,
+        max_length=max_length,
+        stride=max_length,
+        shuffle=False,
     )
     data_iter = iter(dataloader)
     inputs, targets = next(data_iter)
-    print("\nInputs:\n", inputs)
-    print("Targets:\n", targets)
+    print("\nToken IDs:\n", inputs)
+    print("Input shape:\n", inputs.shape)
 
-    test_input_ids = torch.tensor([2, 3, 5, 1])
-    vocab_size = 6
-    output_dim = 3
-    torch.manual_seed(123)
-    embedding_layer = torch.nn.Embedding(vocab_size, output_dim)
-    print(embedding_layer.weight)
+    token_embeddings = token_embedding_layer(inputs)
+    print(token_embeddings.shape)
+
+    context_length = max_length
+    pos_embedding_layer = torch.nn.Embedding(context_length, output_dim)
+    pos_embeddings = pos_embedding_layer(torch.arange(context_length))
+    print(pos_embeddings.shape)
+
+    input_embeddings = token_embeddings + pos_embeddings
+    print(input_embeddings.shape)

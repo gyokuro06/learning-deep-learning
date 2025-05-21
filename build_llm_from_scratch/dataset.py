@@ -1,8 +1,9 @@
 from typing import List, Tuple
-from tiktoken import Encoding
+
 import tiktoken
 import torch
-from torch.utils.data import Dataset, DataLoader
+from tiktoken import Encoding
+from torch.utils.data import DataLoader, Dataset
 
 
 class GPTDatasetV1(Dataset):
